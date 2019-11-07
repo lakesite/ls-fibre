@@ -3,11 +3,16 @@
 package service
 
 import (
+	"crypto/tls"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,6 +23,29 @@ type WebService struct {
 
 	Instance string
 	Address  string
+}
+
+type ProxyOverride struct {
+	Match  string
+	Host   string
+	Path   string
+}
+
+type ProxyConfig struct {
+	Path     string
+	Host     string
+	Override ProxyOverride
+}
+
+func trimLeftChars(s string, n int) string {
+	m := 0
+	for i := range s {
+	  if m >= n {
+	    return s[i:]
+	  }
+	  m++
+	}
+	return s[:0]
 }
 
 // NotFoundHandler provides a default not found handler for the instance.
@@ -67,6 +95,45 @@ func (ws *WebService) PageHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 		tmpl.ExecuteTemplate(w, "base", struct{ Data string }{Data: "data"})
+	}
+}
+
+func (ws *WebService) SetupProxy(config ProxyConfig) http.Handler {
+	// referenced https://www.integralist.co.uk/posts/golang-reverse-proxy/#3
+	purl, _ := url.Parse(config.Host)
+
+	proxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.Header.Add("X-Forwarded-Host", req.Host)
+			req.Header.Add("X-Origin-Host", purl.Host)
+			req.Host = purl.Host
+			req.URL.Host = purl.Host
+			req.URL.Scheme = purl.Scheme
+
+			if config.Override.Path != "" && config.Override.Match != "" {
+				if strings.HasPrefix(req.URL.Path, config.Override.Match) {
+					req.URL.Path = trimLeftChars(req.URL.Path, len(config.Override.Match)) + config.Override.Path
+				}
+			}
+		},
+
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout: 5 * time.Second,
+			}).Dial,
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+	return proxy
+}
+
+func (ws *WebService) Proxy(config []ProxyConfig) {
+	for _, pc := range config {
+		proxy := ws.SetupProxy(pc)
+
+		ws.Router.HandleFunc(pc.Path, func(w http.ResponseWriter, r *http.Request) {
+			proxy.ServeHTTP(w, r)
+		})
 	}
 }
 

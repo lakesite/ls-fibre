@@ -14,6 +14,27 @@ checks, etc as a wrapper around gorilla/mux:
   r.HandleFunc("/page/{page}.html", ws.PageHandler)
 ```
 
+fibre also provides a simple method for proxying requests:
+
+```
+  cfg := []service.ProxyConfig{
+    service.ProxyConfig{
+      Path: "/",
+      Host: "redirecthost.co"
+    },
+    service.ProxyConfig{
+      Path: "/whatever/path",
+      Host: "google.com",
+      Override: service.ProxyOverride{
+        Match: "/api/v2",
+        Path: "/api/v3",
+      },
+    },
+  }
+
+  ws.Proxy(cfg)
+```
+
 To use, make sure your app has a bin folder layout such as:
 
 ```
