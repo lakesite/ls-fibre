@@ -72,6 +72,14 @@ func (ws *WebService) APIKeyMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// JsonStatusResponse takees a response writer, response string and status,
+// and writes the status and encodes the response string.
+func (ws *WebService) JsonStatusResponse(w http.ResponseWriter, response string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(response)
+}
+
 // NotFoundHandler provides a default not found handler for the instance.
 func (ws *WebService) NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
