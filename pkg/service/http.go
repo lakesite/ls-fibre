@@ -4,6 +4,7 @@ package service
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -23,12 +24,13 @@ type WebService struct {
 
 	Instance string
 	Address  string
+	Apikey   string
 }
 
 type ProxyOverride struct {
-	Match  string
-	Host   string
-	Path   string
+	Match string
+	Host  string
+	Path  string
 }
 
 type ProxyConfig struct {
@@ -40,12 +42,34 @@ type ProxyConfig struct {
 func trimLeftChars(s string, n int) string {
 	m := 0
 	for i := range s {
-	  if m >= n {
-	    return s[i:]
-	  }
-	  m++
+		if m >= n {
+			return s[i:]
+		}
+		m++
 	}
 	return s[:0]
+}
+
+// LogMiddleware simply prints request URIs.
+func (ws *WebService) LogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("Got request URI: %s\n", r.RequestURI)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// APIKeyMiddleware provides a built in check for api key, for json api services
+func (ws *WebService) APIKeyMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apik := r.Header.Get("api_key")
+		if len(apik) == 0 || apik != ws.Apikey {
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode("Invalid api_key")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // NotFoundHandler provides a default not found handler for the instance.
