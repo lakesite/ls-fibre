@@ -35,22 +35,26 @@ fibre also provides a simple method for proxying requests:
   ws.Proxy(cfg)
 ```
 
-To use, make sure your app has a bin folder layout such as:
+To use, make sure your app has a bin folder layout matching the service name (in
+this case, main) such as:
 
 ```
 /
   main.go
   /bin
     main
-    /main
-      /page
-        index.html
-      /static
-      /templates
-        base.html
+    /web
+      /main
+        /page
+          index.html
+        /static
+        /templates
+          base.html
 ```
-  $ go build -o bin/main main.go
-  $ ./bin/main
+
+        $ go build -o bin/main main.go
+        $ cd bin
+        $ ./main
 
 ### index.html ###
 
