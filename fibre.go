@@ -1,6 +1,6 @@
-// service includes generic handlers, net/http and mux code for instances of
+// fibre includes generic handlers, net/http and mux code for instances of
 // servers with API endpoints further defined within their respective packages.
-package service
+package fibre
 
 import (
 	"crypto/tls"
