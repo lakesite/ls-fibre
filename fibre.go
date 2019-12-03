@@ -1,5 +1,6 @@
-// fibre includes generic handlers, net/http and mux code for instances of
-// servers with API endpoints further defined within their respective packages.
+// Package ls-fibre includes generic handlers, net/http and mux code for 
+// instances of servers with API endpoints further defined within their 
+// respective packages.
 package fibre
 
 import (
@@ -19,6 +20,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// struct WebService holds a Router (*mux.Router), Instance name (string), 
+// Address (string), and optional Apikey (string).
 type WebService struct {
 	Router *mux.Router
 

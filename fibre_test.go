@@ -1,6 +1,7 @@
 package fibre
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -142,6 +143,31 @@ func TestPageHandler(t *testing.T) {
 	body := w.Body.String()
 	if !strings.Contains(body, "html") {
 		t.Errorf("TestPageHandler returned unexpected body: %v", body)
+	}
+}
+
+func TestJsonStatusResponse(t *testing.T) {
+	expected := `{"test": "response"}`
+	ws := new(WebService)
+	ws.Instance = "test"
+	w := httptest.NewRecorder()
+	ws.JsonStatusResponse(w, expected, http.StatusOK)
+
+	// test return status:
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("JsonStatusResponse (%v) failed to set expected status code: got %v want %v", ws.Instance, status, http.StatusOK)
+	}
+
+	// test Header response:
+	if header := w.Header().Get("Content-Type"); header != "application/json" {
+		t.Errorf("JsonStatusResponse (%v) failed to return expected Content-Type header: got %v want %v", ws.Instance, w.Header().Get("Content-Type"), "application/json")
+	}
+
+	// test body:
+	var response string
+	json.Unmarshal([]byte(w.Body.String()), &response)
+	if response != expected {
+		t.Errorf("JsonStatusResponse (%v) failed to return expected content: got %v want %v", ws.Instance, w.Body.String(), expected)
 	}
 }
 

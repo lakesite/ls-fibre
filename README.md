@@ -14,6 +14,21 @@ checks, etc as a wrapper around gorilla/mux:
   r.HandleFunc("/page/{page}.html", ws.PageHandler)
 ```
 
+fibre also provides generic api key middleware and logging middleware (for 
+debugging):
+
+```
+  ...
+	address := config.Getenv("MAIN_HOST", "127.0.0.1") + ":" + config.Getenv("MAIN_PORT", "8080")
+	ws := fibre.NewWebService("main", address)
+
+  ws.Apikey = config.Getenv("MAIN_API_KEY", "default_key")
+
+  ws.Router.Use(ws.LogMiddleware)
+  ws.Router.Use(ws.APIKeyMiddleware)
+
+```
+
 fibre also provides a simple method for proxying requests:
 
 ```
@@ -35,8 +50,8 @@ fibre also provides a simple method for proxying requests:
   ws.Proxy(cfg)
 ```
 
-To use, make sure your app has a bin folder layout matching the service name (in
-this case, main) such as:
+To use pages with templates, make sure your app has a bin folder layout 
+matching the service name (in this case, main) such as:
 
 ```
 /
@@ -96,8 +111,18 @@ func main() {
 	ws := fibre.NewWebService("main", address)
 	ws.RunWebServer()
 }
-
 ```
+
+## testing ##
+
+  $ go test
+
+## running ##
+
+  $ cd examples
+  $ go run main.go
+
+  Visit http://localhost:8080/
 
 ## license ##
 
